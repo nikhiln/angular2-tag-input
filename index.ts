@@ -1,2 +1,2 @@
-export * from './lib/tag-input.module';
+export { RlTagInputModule } from './lib/tag-input.module';
 export * from './lib/components/tag-input/tag-input.component';
