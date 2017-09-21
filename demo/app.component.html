@@ -2,6 +2,7 @@
 <div>
   <rl-tag-input
     [(ngModel)]="tags"
+    [tagItemMaxLength]="10"
     placeholder="Testing placeholder">
   </rl-tag-input>
 </div>
@@ -22,6 +23,7 @@
     [autocomplete]="true"
     [autocompleteItems]="autocompleteItems"
     [(ngModel)]="autocompleteTags"
+    [tagItemMaxLength]="10"
     placeholder="Testing placeholder">
   </rl-tag-input>
 </div>

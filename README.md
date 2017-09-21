@@ -1,6 +1,8 @@
 # angular2-tag-input
 Tag input component for Angular 2
 
+This is aot compatible version of angular2-tag-input
+
 ## Demo & Examples
 [View Demo](http://www.webpackbin.com/EkDO0p3Ab)
 
@@ -40,6 +42,7 @@ export class YourModule {}
 | `autocompleteMustMatch` | `boolean` | `true` | Whether a tag must be present in the suggestions list to be valid |
 | `autocompleteSelectFirstItem` | `boolean` | `true` | Pre-highlight the first item in the suggestions list |
 | `placeholder` | `string` | `'Add a tag'` | Placeholder for the `<input>` tag. |
+| `tagItemMaxLength` | `integer` | `100` | Maximum length allowed for tag item |
 
 
 ### Outputs

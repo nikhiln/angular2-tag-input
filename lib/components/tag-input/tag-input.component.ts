@@ -1,15 +1,15 @@
 import {
-  Component,
-  ElementRef,
-  EventEmitter,
-  forwardRef,
-  HostBinding,
-  HostListener,
-  Input,
-  OnDestroy,
-  OnInit,
-  Output,
-  ViewChild
+    Component,
+    ElementRef,
+    EventEmitter,
+    forwardRef,
+    HostBinding,
+    HostListener,
+    Input,
+    OnDestroy,
+    OnInit,
+    Output,
+    ViewChild
 } from '@angular/core';
 import { AbstractControl, ControlValueAccessor, NG_VALUE_ACCESSOR, FormBuilder, FormGroup } from '@angular/forms';
 import { Subscription } from 'rxjs';
@@ -19,17 +19,17 @@ import { KEYS } from '../../shared/tag-input-keys';
 /**
  * Taken from @angular/common/src/facade/lang
  */
-function isBlank(obj: any): boolean {
-  return obj === undefined || obj === null;
+function isBlank(obj:any):boolean {
+    return obj === undefined || obj === null;
 }
 
 export interface AutoCompleteItem {
-  [index: string]: any;
+    [index: string]: any;
 }
 
 @Component({
-  selector: 'rl-tag-input',
-  template: `
+    selector: 'rl-tag-input',
+    template: `
     <rl-tag-input-item
       [text]="tag"
       [index]="index"
@@ -59,7 +59,7 @@ export interface AutoCompleteItem {
       </div>
     </form>
   `,
-  styles: [`
+    styles: [`
     :host {
       font-family: "Roboto", "Helvetica Neue", sans-serif;
       font-size: 16px;
@@ -97,234 +97,241 @@ export interface AutoCompleteItem {
       box-shadow: 0 2px #0d8bff;
     }
   `],
-  providers: [
-    {provide: NG_VALUE_ACCESSOR, useExisting: forwardRef(() => TagInputComponent), multi: true},
-  ]
+    providers: [
+        {provide: NG_VALUE_ACCESSOR, useExisting: forwardRef(() => TagInputComponent), multi: true},
+    ]
 })
 export class TagInputComponent implements ControlValueAccessor, OnDestroy, OnInit {
-  @HostBinding('class.ng2-tag-input-focus') isFocused:any;
-  @Input() addOnBlur: boolean = true;
-  @Input() addOnComma: boolean = true;
-  @Input() addOnEnter: boolean = true;
-  @Input() addOnPaste: boolean = true;
-  @Input() addOnSpace: boolean = false;
-  @Input() allowDuplicates: boolean = false;
-  @Input() allowedTagsPattern: RegExp = /.+/;
-  @Input() autocomplete: boolean = false;
-  @Input() autocompleteItems: string[] = [];
-  @Input() autocompleteMustMatch: boolean = true;
-  @Input() autocompleteSelectFirstItem: boolean = true;
-  @Input() pasteSplitPattern: string = ',';
-  @Input() placeholder: string = 'Add a tag';
-  @Output('addTag') addTag: EventEmitter<string> = new EventEmitter<string>();
-  @Output('removeTag') removeTag: EventEmitter<string> = new EventEmitter<string>();
-  @ViewChild('tagInputElement') tagInputElement: ElementRef;
+    @HostBinding('class.ng2-tag-input-focus') isFocused:any;
+    @Input() addOnBlur:boolean = true;
+    @Input() addOnComma:boolean = true;
+    @Input() addOnEnter:boolean = true;
+    @Input() addOnPaste:boolean = true;
+    @Input() addOnSpace:boolean = false;
+    @Input() allowDuplicates:boolean = false;
+    @Input() allowedTagsPattern:RegExp = /.+/;
+    @Input() autocomplete:boolean = false;
+    @Input() autocompleteItems:string[] = [];
+    @Input() autocompleteMustMatch:boolean = true;
+    @Input() autocompleteSelectFirstItem:boolean = true;
+    @Input() pasteSplitPattern:string = ',';
+    @Input() placeholder:string = 'Add a tag';
+    @Input() tagItemMaxLength:number = 100;
+    @Output('addTag') addTag:EventEmitter<string> = new EventEmitter<string>();
+    @Output('removeTag') removeTag:EventEmitter<string> = new EventEmitter<string>();
+    @ViewChild('tagInputElement') tagInputElement:ElementRef;
 
-  private canShowAutoComplete: boolean = false;
-  private tagInputSubscription: Subscription;
-  private splitRegExp: RegExp;
-  private get tagInputField(): AbstractControl {
-    return this.tagInputForm.get('tagInputField');
-  }
-  private get inputValue(): string {
-    return this.tagInputField.value;
-  }
+    private canShowAutoComplete:boolean = false;
+    private tagInputSubscription:Subscription;
+    private splitRegExp:RegExp;
 
-  public tagInputForm: FormGroup;
-  public autocompleteResults: string[] = [];
-  public tagsList: string[] = [];
-  public selectedTag: number;
-
-  @HostListener('document:click', ['$event', '$event.target']) onDocumentClick(event: MouseEvent, target: HTMLElement) {
-    if (!target) {
-      return;
+    private get tagInputField():AbstractControl {
+        return this.tagInputForm.get('tagInputField');
     }
 
-    if (!this.elementRef.nativeElement.contains(target)) {
-      this.canShowAutoComplete = false;
+    private get inputValue():string {
+        return this.tagInputField.value;
     }
-  }
 
-  constructor(
-    private fb: FormBuilder,
-    private elementRef: ElementRef) {}
+    public tagInputForm:FormGroup;
+    public autocompleteResults:string[] = [];
+    public tagsList:string[] = [];
+    public selectedTag:number;
 
-  ngOnInit() {
-    this.splitRegExp = new RegExp(this.pasteSplitPattern);
-
-    this.tagInputForm = this.fb.group({
-      tagInputField: ''
-    });
-
-    this.tagInputSubscription = this.tagInputField.valueChanges
-    .do(value => {
-      this.autocompleteResults = this.autocompleteItems.filter(item => {
-        /**
-         * _isTagUnique makes sure to remove items from the autocompelte dropdown if they have
-         * already been added to the model, and allowDuplicates is false
-         */
-        return item.toLowerCase().indexOf(value.toLowerCase()) > -1 && this._isTagUnique(item);
-      });
-    })
-    .subscribe();
-  }
-
-  onKeydown(event: KeyboardEvent): void {
-    let key = event.keyCode;
-    switch (key) {
-      case KEYS.backspace:
-        this._handleBackspace();
-        break;
-
-      case KEYS.enter:
-        if (this.addOnEnter && !this.showAutocomplete()) {
-          this._addTags([this.inputValue]);
-          event.preventDefault();
+    @HostListener('document:click', ['$event', '$event.target']) onDocumentClick(event:MouseEvent, target:HTMLElement) {
+        if (!target) {
+            return;
         }
-        break;
 
-      case KEYS.comma:
-        if (this.addOnComma) {
-          this._addTags([this.inputValue]);
-          event.preventDefault();
+        if (!this.elementRef.nativeElement.contains(target)) {
+            this.canShowAutoComplete = false;
         }
-        break;
+    }
 
-      case KEYS.space:
-        if (this.addOnSpace) {
-          this._addTags([this.inputValue]);
-          event.preventDefault();
+    constructor(private fb:FormBuilder,
+                private elementRef:ElementRef) {
+    }
+
+    ngOnInit() {
+        this.splitRegExp = new RegExp(this.pasteSplitPattern);
+
+        this.tagInputForm = this.fb.group({
+            tagInputField: ''
+        });
+
+        this.tagInputSubscription = this.tagInputField.valueChanges
+            .do(value => {
+                this.autocompleteResults = this.autocompleteItems.filter(item => {
+                    /**
+                     * _isTagUnique makes sure to remove items from the autocompelte dropdown if they have
+                     * already been added to the model, and allowDuplicates is false
+                     */
+                    return item.toLowerCase().indexOf(value.toLowerCase()) > -1 && this._isTagUnique(item);
+                });
+            })
+            .subscribe();
+    }
+
+    onKeydown(event:KeyboardEvent):void {
+        let key = event.keyCode;
+        switch (key) {
+            case KEYS.backspace:
+                this._handleBackspace();
+                break;
+
+            case KEYS.enter:
+                if (this.addOnEnter && !this.showAutocomplete()) {
+                    this._addTags([this.inputValue]);
+                    event.preventDefault();
+                }
+                break;
+
+            case KEYS.comma:
+                if (this.addOnComma) {
+                    this._addTags([this.inputValue]);
+                    event.preventDefault();
+                }
+                break;
+
+            case KEYS.space:
+                if (this.addOnSpace) {
+                    this._addTags([this.inputValue]);
+                    event.preventDefault();
+                }
+                break;
+
+            default:
+                break;
         }
-        break;
-
-      default:
-        break;
     }
-  }
 
-  onInputBlurred(event:any): void {
-    if (this.addOnBlur) { this._addTags([this.inputValue]); }
-    this.isFocused = false;
-  }
-
-  onInputFocused(): void {
-    this.isFocused = true;
-    setTimeout(() => this.canShowAutoComplete = true);
-  }
-
-  onInputPaste(event:any): void {
-    let clipboardData = event.clipboardData || (event.originalEvent && event.originalEvent.clipboardData);
-    let pastedString = clipboardData.getData('text/plain');
-    let tags = this._splitString(pastedString);
-    this._addTags(tags);
-    setTimeout(() => this._resetInput());
-  }
-
-  onAutocompleteSelect(selectedItem:any) {
-    this._addTags([selectedItem]);
-    this.tagInputElement.nativeElement.focus();
-  }
-
-  onAutocompleteEnter() {
-    if (this.addOnEnter && this.showAutocomplete() && !this.autocompleteMustMatch) {
-      this._addTags([this.inputValue]);
+    onInputBlurred(event:any):void {
+        if (this.addOnBlur) {
+            this._addTags([this.inputValue]);
+        }
+        this.isFocused = false;
     }
-  }
 
-  showAutocomplete(): boolean {
-    return (
-      this.autocomplete &&
-      this.autocompleteItems &&
-      this.autocompleteItems.length > 0 &&
-      this.canShowAutoComplete &&
-      this.inputValue.length > 0
-    );
-  }
-
-  private _splitString(tagString: string): string[] {
-    tagString = tagString.trim();
-    let tags = tagString.split(this.splitRegExp);
-    return tags.filter((tag) => !!tag);
-  }
-
-  private _isTagValid(tagString: string): boolean {
-    return this.allowedTagsPattern.test(tagString) &&
-           this._isTagUnique(tagString);
-  }
-
-  private _isTagUnique(tagString: string): boolean {
-    return this.allowDuplicates ? true : this.tagsList.indexOf(tagString) === -1;
-  }
-
-  private _isTagAutocompleteItem(tagString: string): boolean {
-    return this.autocompleteItems.indexOf(tagString) > -1;
-  }
-
-  private _emitTagAdded(addedTags: string[]): void {
-    addedTags.forEach(tag => this.addTag.emit(tag));
-  }
-
-  private _emitTagRemoved(removedTag:any): void {
-    this.removeTag.emit(removedTag);
-  }
-
-  private _addTags(tags: string[]): void {
-    let validTags = tags.map(tag => tag.trim())
-                        .filter(tag => this._isTagValid(tag))
-                        .filter((tag, index, tagArray) => tagArray.indexOf(tag) === index)
-                        .filter(tag => (this.showAutocomplete() && this.autocompleteMustMatch) ? this._isTagAutocompleteItem(tag) : true);
-
-    this.tagsList = this.tagsList.concat(validTags);
-    this._resetSelected();
-    this._resetInput();
-    this.onChange(this.tagsList);
-    this._emitTagAdded(validTags);
-  }
-
-  private _removeTag(tagIndexToRemove: number): void {
-    let removedTag = this.tagsList[tagIndexToRemove];
-    this.tagsList.splice(tagIndexToRemove, 1);
-    this._resetSelected();
-    this.onChange(this.tagsList);
-    this._emitTagRemoved(removedTag);
-  }
-
-  private _handleBackspace(): void {
-    if (!this.inputValue.length && this.tagsList.length) {
-      if (!isBlank(this.selectedTag)) {
-        this._removeTag(this.selectedTag);
-      } else {
-        this.selectedTag = this.tagsList.length - 1;
-      }
+    onInputFocused():void {
+        this.isFocused = true;
+        setTimeout(() => this.canShowAutoComplete = true);
     }
-  }
 
-  private _resetSelected(): void {
-    this.selectedTag = null;
-  }
+    onInputPaste(event:any):void {
+        let clipboardData = event.clipboardData || (event.originalEvent && event.originalEvent.clipboardData);
+        let pastedString = clipboardData.getData('text/plain');
+        let tags = this._splitString(pastedString);
+        this._addTags(tags);
+        setTimeout(() => this._resetInput());
+    }
 
-  private _resetInput(): void {
-    this.tagInputField.setValue('');
-  }
+    onAutocompleteSelect(selectedItem:any) {
+        this._addTags([selectedItem]);
+        this.tagInputElement.nativeElement.focus();
+    }
 
-  /** Implemented as part of ControlValueAccessor. */
-  onChange: (value: any) => any = () => { };
+    onAutocompleteEnter() {
+        if (this.addOnEnter && this.showAutocomplete() && !this.autocompleteMustMatch) {
+            this._addTags([this.inputValue]);
+        }
+    }
 
-  onTouched: () => any = () => { };
+    showAutocomplete():boolean {
+        return (
+            this.autocomplete &&
+            this.autocompleteItems &&
+            this.autocompleteItems.length > 0 &&
+            this.canShowAutoComplete &&
+            this.inputValue.length > 0
+        );
+    }
 
-  writeValue(value: any) {
-    this.tagsList = value;
-  }
+    private _splitString(tagString:string):string[] {
+        tagString = tagString.trim();
+        let tags = tagString.split(this.splitRegExp);
+        return tags.filter((tag) => !!tag);
+    }
 
-  registerOnChange(fn: any) {
-    this.onChange = fn;
-  }
+    private _isTagValid(tagString:string):boolean {
+        return this.allowedTagsPattern.test(tagString) &&
+            this._isTagUnique(tagString) && (tagString.length <= this.tagItemMaxLength);
+    }
 
-  registerOnTouched(fn: any) {
-    this.onTouched = fn;
-  }
+    private _isTagUnique(tagString:string):boolean {
+        return this.allowDuplicates ? true : this.tagsList.indexOf(tagString) === -1;
+    }
 
-  ngOnDestroy() {
-    this.tagInputSubscription.unsubscribe();
-  }
+    private _isTagAutocompleteItem(tagString:string):boolean {
+        return this.autocompleteItems.indexOf(tagString) > -1;
+    }
+
+    private _emitTagAdded(addedTags:string[]):void {
+        addedTags.forEach(tag => this.addTag.emit(tag));
+    }
+
+    private _emitTagRemoved(removedTag:any):void {
+        this.removeTag.emit(removedTag);
+    }
+
+    private _addTags(tags:string[]):void {
+        let validTags = tags.map(tag => tag.trim())
+            .filter(tag => this._isTagValid(tag))
+            .filter((tag, index, tagArray) => tagArray.indexOf(tag) === index)
+            .filter(tag => (this.showAutocomplete() && this.autocompleteMustMatch) ? this._isTagAutocompleteItem(tag) : true);
+
+        this.tagsList = this.tagsList.concat(validTags);
+        this._resetSelected();
+        this._resetInput();
+        this.onChange(this.tagsList);
+        this._emitTagAdded(validTags);
+    }
+
+    private _removeTag(tagIndexToRemove:number):void {
+        let removedTag = this.tagsList[tagIndexToRemove];
+        this.tagsList.splice(tagIndexToRemove, 1);
+        this._resetSelected();
+        this.onChange(this.tagsList);
+        this._emitTagRemoved(removedTag);
+    }
+
+    private _handleBackspace():void {
+        if (!this.inputValue.length && this.tagsList.length) {
+            if (!isBlank(this.selectedTag)) {
+                this._removeTag(this.selectedTag);
+            } else {
+                this.selectedTag = this.tagsList.length - 1;
+            }
+        }
+    }
+
+    private _resetSelected():void {
+        this.selectedTag = null;
+    }
+
+    private _resetInput():void {
+        this.tagInputField.setValue('');
+    }
+
+    /** Implemented as part of ControlValueAccessor. */
+    onChange:(value:any) => any = () => {
+    };
+
+    onTouched:() => any = () => {
+    };
+
+    writeValue(value:any) {
+        this.tagsList = value;
+    }
+
+    registerOnChange(fn:any) {
+        this.onChange = fn;
+    }
+
+    registerOnTouched(fn:any) {
+        this.onTouched = fn;
+    }
+
+    ngOnDestroy() {
+        this.tagInputSubscription.unsubscribe();
+    }
 }
